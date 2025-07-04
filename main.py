@@ -9,8 +9,10 @@ def main():
     while True:
         success, img = cap.read()
         img = detector.findHands(img)
-        results = detector.find_single_position(img, 4)
-        
+        lmDict = detector.findPositions(img, draw=False)
+
+        #print(detector.findDistance((0,8), (1,8), lmDict, img))
+        print(detector.detect_Gesture(lmDict))
         
         cTime = time.time()
         fps = 1/(cTime - pTime)

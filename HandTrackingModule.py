@@ -1,6 +1,54 @@
 import cv2
 import mediapipe as mp
 import time
+import math
+
+
+def euclidean_distance(x1, y1, x2, y2):
+    return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
+
+def check_thumbs_up(handLM):
+    thumb_tip = handLM[4]
+
+
+    thumbs_up = False
+    index_folded = False
+    middle_folded = False
+    ring_folded = False
+    pinky_folded = False
+
+    #check if the thumb is extended upward
+    if thumb_tip.y < handLM[3].y and thumb_tip.y < handLM[2].y:
+        thumbs_up = True
+
+    
+    #check to see if the fingers or holded in
+    if handLM[8].y > handLM[5].y and handLM[8].x > handLM[5].x:
+        index_folded = True
+    
+    if handLM[12].y > handLM[9].y and handLM[12].x > handLM[9].x:
+        middle_folded = True
+    
+    if handLM[16].y > handLM[13].y and handLM[16].x > handLM[13].x:
+        ring_folded = True
+    
+    if handLM[20].y > handLM[17].y and handLM[20].x > handLM[17].x:
+        pinky_folded = True
+    
+
+    if thumbs_up and index_folded and middle_folded and ring_folded and pinky_folded:
+        return "Thumbs Up"
+
+    return "Unknown"
+
+
+
+class landMark:
+    def __init__(self, id, x, y):
+        self.id = id
+        self.x = x
+        self.y = y
 
 
 class handDetector():
@@ -31,8 +79,7 @@ class handDetector():
         
         return img
     
-    def findPositions(self, img, draw=True):
-        
+    def findPositions(self, img, draw=True) -> dict[int, list[landMark]]:
         lmDict = {}
         counter = 0
         if self.results.multi_hand_landmarks: 
@@ -41,18 +88,18 @@ class handDetector():
                 for id, lm in enumerate(handLms.landmark):
                     height, width, channels = img.shape
                     cx, cy = int(lm.x*width), int(lm.y*height)
-                    lmDict[counter].append([id, cx, cy])
+                    newLandMark = landMark(id, cx, cy)
+                    lmDict[counter].append(newLandMark)
                     if draw:
                         cv2.circle(img, (cx,cy), 10, (255, 0, 255), cv2.FILLED) 
                 
                 counter += 1
 
         return lmDict
-        # Returns a dictionary with the hand number as key and a list of [id, x, y] for each landmark as value
-        # Example: {0: [[0, 100, 200], [1, 150, 250], ...], 1: [[0, 300, 400], [1, 350, 450], ...]}
+        # Returns a dictionary with the hand number as key and a class landmark of [id, x, y] for each landmark as value
         # If no hands are detected, returns an empty dictionary {}. 
     
-    def find_single_position(self, img, positionNumber: int, draw=True):
+    def find_single_position(self, img, positionNumber: int, draw=True) -> dict[int, list[landMark]]:
         if positionNumber < 0 or positionNumber > 20:
             return {}
 
@@ -60,11 +107,13 @@ class handDetector():
         counter = 0
         if self.results.multi_hand_landmarks:
             for handLms in self.results.multi_hand_landmarks:
+                lmDict[counter] = []
                 for id, lm in enumerate(handLms.landmark):
                     if id == positionNumber:
                         height, width, channels = img.shape
                         cx, cy = int(lm.x*width), int(lm.y*height)
-                        lmDict[counter] = [id, cx, cy]
+                        newLandMark = landMark(id, cx, cy)
+                        lmDict[counter].append(newLandMark)
                         if draw:
                             cv2.circle(img, (cx,cy), 10, (255,0,255), cv2.FILLED)
                 
@@ -73,3 +122,46 @@ class handDetector():
         return lmDict
         #returns a dictionary with the hand number as key and a list of [id, cx, cy] for the wanted landmark
         #if no hands are detected it returns an empty dictionary
+
+    
+    def findDistance(self, p1, p2, lmDict, img=None, draw=True) -> int:
+        # p1 and p2 are tuples of (hand number, landmark id)
+        # Example: findDistance((0, 4), (0, 8)) for distance between thumb tip and index finger tip of the first hand
+        if len(p1) != 2 or len(p2) != 2:
+            return None
+        
+        hand1, id1 = p1
+        hand2, id2 = p2
+
+        if id1 < 0 or id1 > 20:
+            return None
+        
+        if id2 < 0 or id2 > 20:
+            return None
+
+        if hand1 not in lmDict or hand2 not in lmDict:
+            return None
+        
+        x1, y1 = lmDict[hand1][id1].cx, lmDict[hand1][id1].cy
+        x2, y2 = lmDict[hand2][id2].cx, lmDict[hand2][id2].cy
+
+        length = euclidean_distance(x1, y1, x2, y2)
+
+        if draw and img is not None:
+            cv2.line(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
+            cv2.circle(img, (x1, y1), 10, (0, 255, 0), cv2.FILLED)
+            cv2.circle(img, (x2, y2), 10, (0, 255, 0), cv2.FILLED)
+
+        return length
+        
+
+    def detect_Gesture(self, lmDict):
+        if not lmDict:
+            return None
+
+        gesture = "Unknown"
+        hand = lmDict[0]
+        
+        #detects Thumbs Down
+        gesture = check_thumbs_up(hand)
+        return gesture
