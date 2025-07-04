@@ -1,47 +1,7 @@
 import cv2
 import mediapipe as mp
 import time
-import math
-
-
-def euclidean_distance(x1, y1, x2, y2):
-    return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-
-
-def check_thumbs_up(handLM):
-    thumb_tip = handLM[4]
-
-
-    thumbs_up = False
-    index_folded = False
-    middle_folded = False
-    ring_folded = False
-    pinky_folded = False
-
-    #check if the thumb is extended upward
-    if thumb_tip.y < handLM[3].y and thumb_tip.y < handLM[2].y:
-        thumbs_up = True
-
-    
-    #check to see if the fingers or holded in
-    if handLM[8].y > handLM[5].y and handLM[8].x > handLM[5].x:
-        index_folded = True
-    
-    if handLM[12].y > handLM[9].y and handLM[12].x > handLM[9].x:
-        middle_folded = True
-    
-    if handLM[16].y > handLM[13].y and handLM[16].x > handLM[13].x:
-        ring_folded = True
-    
-    if handLM[20].y > handLM[17].y and handLM[20].x > handLM[17].x:
-        pinky_folded = True
-    
-
-    if thumbs_up and index_folded and middle_folded and ring_folded and pinky_folded:
-        return "Thumbs Up"
-
-    return "Unknown"
-
+from helper import *
 
 
 class landMark:
@@ -155,13 +115,33 @@ class handDetector():
         return length
         
 
+    def check_thumbs_up(self, handLM):
+        """
+        Determine if hand shows a thumbs up gesture.
+        """
+        thumbs_up = False
+
+        # Thumb extended upward
+        if handLM[4].y < handLM[3].y and handLM[4].y < handLM[2].y:
+            thumbs_up = True
+
+        # Other fingers folded
+        index_folded = handLM[8].y > handLM[5].y and handLM[8].x > handLM[5].x
+        middle_folded = handLM[12].y > handLM[9].y and handLM[12].x > handLM[9].x
+        ring_folded = handLM[16].y > handLM[13].y and handLM[16].x > handLM[13].x
+        pinky_folded = handLM[20].y > handLM[17].y and handLM[20].x > handLM[17].x
+
+        if thumbs_up and index_folded and middle_folded and ring_folded and pinky_folded:
+            return "Thumbs Up"
+        return "Unknown"
+
     def detect_Gesture(self, lmDict):
         if not lmDict:
             return None
 
         gesture = "Unknown"
-        hand = lmDict[0]
+        hand = lmDict[0] #only does one hand for now
         
         #detects Thumbs Down
-        gesture = check_thumbs_up(hand)
+        gesture = self.check_thumbs_up(hand)
         return gesture
