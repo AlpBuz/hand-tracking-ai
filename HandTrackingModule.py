@@ -33,7 +33,7 @@ class handDetector():
     
     def findPosition(self, img, PositionNumber: int=0, draw=True):
         if PositionNumber < 0 or PositionNumber > 20:
-            return []
+            return {}  # Return empty dictionary if PositionNumber is out of range
         
         lmDict = {}
         counter = 0
@@ -51,37 +51,6 @@ class handDetector():
                 counter += 1
 
         return lmDict
-    
-   
-
-
-
-def main():
-    pTime = 0
-    cTime = 0
-    cap = cv2.VideoCapture(0)
-    detector = handDetector()
-
-    while True:
-        success, img = cap.read()
-        img = detector.findHands(img)
-        results = detector.findPosition(img, 4)
-        
-        
-        cTime = time.time()
-        fps = 1/(cTime - pTime)
-        pTime = cTime
-
-        cv2.putText(img, str(int(fps)), (10, 70), cv2.FONT_HERSHEY_PLAIN, 3,
-                    (255, 0, 255), 3)
-
-        cv2.imshow("Image", img)
-        cv2.waitKey(1)
-
-
-
-
-
-
-if __name__ == "__main__":
-    main()
+        # Returns a dictionary with the hand number as key and a list of [id, x, y] for each landmark as value
+        # Example: {0: [[0, 100, 200], [1, 150, 250], ...], 1: [[0, 300, 400], [1, 350, 450], ...]}
+        # If no hands are detected, returns an empty dictionary {}. 
