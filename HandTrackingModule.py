@@ -31,9 +31,7 @@ class handDetector():
         
         return img
     
-    def findPosition(self, img, PositionNumber: int=0, draw=True):
-        if PositionNumber < 0 or PositionNumber > 20:
-            return {}  # Return empty dictionary if PositionNumber is out of range
+    def findPositions(self, img, draw=True):
         
         lmDict = {}
         counter = 0
@@ -45,8 +43,7 @@ class handDetector():
                     cx, cy = int(lm.x*width), int(lm.y*height)
                     lmDict[counter].append([id, cx, cy])
                     if draw:
-                        if id == PositionNumber:
-                            cv2.circle(img, (cx,cy), 10, (255, 0, 255), cv2.FILLED) 
+                        cv2.circle(img, (cx,cy), 10, (255, 0, 255), cv2.FILLED) 
                 
                 counter += 1
 
@@ -54,3 +51,25 @@ class handDetector():
         # Returns a dictionary with the hand number as key and a list of [id, x, y] for each landmark as value
         # Example: {0: [[0, 100, 200], [1, 150, 250], ...], 1: [[0, 300, 400], [1, 350, 450], ...]}
         # If no hands are detected, returns an empty dictionary {}. 
+    
+    def find_single_position(self, img, positionNumber: int, draw=True):
+        if positionNumber < 0 or positionNumber > 20:
+            return {}
+
+        lmDict = {}
+        counter = 0
+        if self.results.multi_hand_landmarks:
+            for handLms in self.results.multi_hand_landmarks:
+                for id, lm in enumerate(handLms.landmark):
+                    if id == positionNumber:
+                        height, width, channels = img.shape
+                        cx, cy = int(lm.x*width), int(lm.y*height)
+                        lmDict[counter] = [id, cx, cy]
+                        if draw:
+                            cv2.circle(img, (cx,cy), 10, (255,0,255), cv2.FILLED)
+                
+                counter += 1
+
+        return lmDict
+        #returns a dictionary with the hand number as key and a list of [id, cx, cy] for the wanted landmark
+        #if no hands are detected it returns an empty dictionary

@@ -9,7 +9,7 @@ def main():
     while True:
         success, img = cap.read()
         img = detector.findHands(img)
-        results = detector.findPosition(img, 4)
+        results = detector.find_single_position(img, 4)
         
         
         cTime = time.time()
