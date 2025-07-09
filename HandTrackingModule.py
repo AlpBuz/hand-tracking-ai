@@ -119,21 +119,46 @@ class handDetector():
         """
         Determine if hand shows a thumbs up gesture.
         """
+         
         thumbs_up = False
 
         # Thumb extended upward
-        if handLM[4].y < handLM[3].y and handLM[4].y < handLM[2].y:
+        if handLM[4].y < handLM[3].y and handLM[3].y < handLM[2].y:
             thumbs_up = True
 
-        # Other fingers folded
-        index_folded = handLM[8].y > handLM[5].y and handLM[8].x > handLM[5].x
-        middle_folded = handLM[12].y > handLM[9].y and handLM[12].x > handLM[9].x
-        ring_folded = handLM[16].y > handLM[13].y and handLM[16].x > handLM[13].x
-        pinky_folded = handLM[20].y > handLM[17].y and handLM[20].x > handLM[17].x
+        # Other fingers folded (tip below PIP)
+        index_folded = handLM[8].y > handLM[6].y
+        middle_folded = handLM[12].y > handLM[10].y
+        ring_folded = handLM[16].y > handLM[14].y
+        pinky_folded = handLM[20].y > handLM[18].y
 
         if thumbs_up and index_folded and middle_folded and ring_folded and pinky_folded:
             return "Thumbs Up"
+        
         return "Unknown"
+    
+
+    def check_thumbs_down(self, handLM):
+        """
+        Detects a thumbs down gesture:
+        """
+        thumbs_down = False
+
+        # Thumb extended downward
+        if handLM[4].y > handLM[3].y and handLM[3].y > handLM[2].y:
+            thumbs_down = True
+
+        # Other fingers folded (tip below PIP)
+        index_folded = handLM[8].y > handLM[6].y
+        middle_folded = handLM[12].y > handLM[10].y
+        ring_folded = handLM[16].y > handLM[14].y
+        pinky_folded = handLM[20].y > handLM[18].y
+
+        if thumbs_down and index_folded and middle_folded and ring_folded and pinky_folded:
+            return "Thumbs Down"
+
+        return "Unknown"
+
 
     def detect_Gesture(self, lmDict):
         if not lmDict:
@@ -144,4 +169,11 @@ class handDetector():
         
         #detects Thumbs Down
         gesture = self.check_thumbs_up(hand)
+        if gesture != "Unknown":
+            return gesture
+        
+        gesture = self.check_thumbs_down(hand)
+        if gesture != "Unknown":
+            return gesture
+
         return gesture
